@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TALISH TELECOM SPEED TEST</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#071321;color:white;font-family:Arial;text-align:center;padding:20px}
+h1{color:#00d9ff;font-size:25px;margin-top:25px}
+p{color:#9bb5c9}
+.card{max-width:480px;margin:25px auto;background:#10243a;padding:25px;border-radius:25px;box-shadow:0 0 25px #00bfff22}
+.meter{width:230px;height:230px;border:9px solid #00cfff;border-radius:50%;margin:25px auto;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 30px #00cfff55}
+#speed{font-size:48px;font-weight:bold;color:#00e5ff}
+button{background:#00cfff;color:#001321;border:0;border-radius:30px;padding:17px 35px;font-size:18px;font-weight:bold;margin:15px;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#071321;border-radius:15px;padding:15px 5px}
+.stat strong{display:block;color:#00dfff;font-size:21px;margin-top:8px}
+#status{color:#00e5ff;min-height:24px}
+#history{text-align:left;font-size:13px;line-height:2}
+</style>
+</head>
+<body>
+<h1>TALISH TELECOM</h1>
+<p>PROFESSIONAL INTERNET SPEED TEST</p>
+<div class="card">
+<div class="meter"><span id="speed">0.00</span><small>Mbps</small></div>
+<div class="stats">
+<div class="stat">PING<strong id="ping">--</strong>ms</div>
+<div class="stat">DOWNLOAD<strong id="down">--</strong>Mbps</div>
+<div class="stat">UPLOAD<strong id="up">--</strong>Mbps</div>
+</div>
+<p id="status">Ready to test</p>
+<button id="start">START SPEED TEST</button>
+<h3>TEST HISTORY</h3>
+<div id="history">No tests yet</div>
+</div>
+<p>Powered by TALISH TELECOM</p>
+<script>
+const $=id=>document.getElementById(id);
+const downURL="https://speed.cloudflare.com/__down?bytes=";
+const upURL="https://speed.cloudflare.com/__up";
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function pingTest(){
+let times=[];
+for(let i=0;i<5;i++){
+let t=performance.now();
+await fetch(downURL+"0&x="+Math.random(),{cache:"no-store"});
+times.push(performance.now()-t);
+}
+return Math.round(times.reduce((a,b)=>a+b)/times.length);
+}
+async function downloadTest(){
+let bytes=12000000,t=performance.now();
+let r=await fetch(downURL+bytes+"&x="+Math.random(),{cache:"no-store"});
+if(!r.ok)throw Error("Download test failed");
+await r.arrayBuffer();
+return bytes*8/(performance.now()-t)/1000;
+}
+async function uploadTest(){
+let bytes=4000000,data=new Uint8Array(bytes);
+crypto.getRandomValues(data.subarray(0,65536));
+for(let i=65536;i<bytes;i+=65536)data.set(data.subarray(0,65536),i);
+let t=performance.now();
+let r=await fetch(upURL,{method:"POST",body:data,cache:"no-store"});
+if(!r.ok)throw Error("Upload test failed");
+await r.text();
+return bytes*8/(performance.now()-t)/1000;
+}
+$("start").onclick=async()=>{
+$("start").disabled=true;
+try{
+$("status").textContent="Testing Ping...";
+let p=await pingTest();$("ping").textContent=p;
+$("status").textContent="Testing Download...";
+let d=await downloadTest();$("down").textContent=d.toFixed(2);$("speed").textContent=d.toFixed(2);
+$("status").textContent="Testing Upload...";
+let u=await uploadTest();$("up").textContent=u.toFixed(2);$("speed").textContent=u.toFixed(2);
+$("status").textContent="Test Completed";
+let item=new Date().toLocaleString()+" | Down "+d.toFixed(2)+" | Up "+u.toFixed(2)+" | Ping "+p;
+let old=JSON.parse(localStorage.getItem("talishHistory")||"[]");
+old.unshift(item);old=old.slice(0,10);
+localStorage.setItem("talishHistory",JSON.stringify(old));
+showHistory();
+}catch(e){$("status").textContent="Error: "+e.message;}
+$("start").disabled=false;
+};
+function showHistory(){
+let h=JSON.parse(localStorage.getItem("talishHistory")||"[]");
+$("history").innerHTML=h.length?h.map(x=>"<div>"+x+"</div>").join(""):"No tests yet";
+}
+showHistory();
+</script>
+</body>
+</html>

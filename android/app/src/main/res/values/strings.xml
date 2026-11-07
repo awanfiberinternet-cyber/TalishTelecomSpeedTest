@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TALISH TELECOM SPEED TEST</string>
+    <string name="title_activity_main">TALISH TELECOM SPEED TEST</string>
+    <string name="package_name">com.talishtelecom.speedtest</string>
+    <string name="custom_url_scheme">com.talishtelecom.speedtest</string>
+</resources>
